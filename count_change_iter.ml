@@ -73,19 +73,19 @@ let index_to_last (coins : (den * den_qty) list) (index: int) =
         | _ -> aux (count - 1) (L.tl coins) in
     aux index coins
 
-let rec rest_of_den coins den = 
+let rec rest_from_den (coins : (den * den_qty) list) den = 
     match coins with 
     | [] -> []
-    | (d,q)::xs -> if d = den then coins else (rest_of_den xs den)
+    | (d,q)::xs -> if d = den then coins else (rest_from_den xs den)
 
-let itrandfltr amt coins den seq flist_ref= 
+let itrandfltr amt coins den seq f= 
     let iod d = index_of_den coins d in
     let doi i = den_of_index coins i in
     let enums = ref [] in
     let coins_len = L.length coins in
-    let root_to_leaf = it amt coins seq in
+    let root_to_leaf = it amt (rest_from_den coins den) seq in
     enums := L.append (get_cmp_enum root_to_leaf) !enums;
-    for j = (iod d) to (coins_len-1) do 
+    for j = (iod den) to (coins_len-1) do 
         !f.(coins_len -1 - j) <- L.append (filter root_to_leaf (doi j)) !f.(coins_len -1 -j);
     done;
     !enums
