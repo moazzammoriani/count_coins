@@ -59,8 +59,8 @@ let rec get_cmp_enum (enums : (den * amt * den list) list) : den list list =
 let index_of_den (coins : (den * den_qty) list) (den : den) = 
     let rec aux (count:int) (coins : (den * den_qty) list) =
         match coins with
-        | [] -> count
-        | _ -> aux (count + 1) (L.tl coins) in
+        | [] -> -1
+        | (d,q)::xs -> if d = den then count else (aux (count+1) xs) in
     aux 0 coins
 
 let den_of_index (coins : (den * den_qty) list) (index: int) = fst (L.nth (L.rev coins) index)
