@@ -22,19 +22,10 @@ let rec iter (amt : amt) (coins : (den * den_qty) list) (curr : int list) (acc :
         let new_coins = (den, (qty-1))::rst in  
         let new_curr = den::curr in
         let curr_den = fst @@ L.hd @@ coins in
-        (*let get_next_den coins = 
-            let nd = if (L.tl coins) = [] then 0  else (fst (L.hd @@ L.tl coins)) in
-            if (new_amt - curr_den) < 0 then 
-                if (L.length @@ coins > 1) then 
-                    (fst @@ (L.nth coins 1)) 
-                else 0
-            else nd in  *)
-        (*let next_d = get_next_den coins in*)
         if qty == 1 then 
             if den > amt then begin
                 iter amt rst curr acc
             end else begin
-                (*let next_d = get_next_den rst in*)
                 iter new_amt rst new_curr ((curr_den, new_amt, new_curr)::acc) end
         else if den > amt then begin
             iter amt rst curr acc
