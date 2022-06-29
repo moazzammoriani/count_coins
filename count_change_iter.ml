@@ -73,7 +73,6 @@ let index_to_last (coins : (den * den_qty) list) (index: int) =
         | _ -> aux (count - 1) (L.tl coins) in
     aux index coins
 
-let f = ref (Array.init 4 (fun _ -> []))
 
 
 let itrandfltr amt coins seq dindex flist_ref= 
@@ -85,7 +84,14 @@ let itrandfltr amt coins seq dindex flist_ref=
     for j = dindex to (coins_len-1) do 
         !flist_ref.(coins_len -1 - j) <- L.append (filter root_to_leaf (doi j)) !flist_ref.(coins_len -1 -j);
     done;
-    !flist_ref
+    enums := L.append (get_cmp_enum root_to_leaf) !enums;
+    enums
+
+(*let cc amt coins =
+    let f = ref (Array.init 4 (fun _ -> [])) in
+    let clen = 
+    for i = 0 to c *)
+
     (* initialize array for filtered enums for each den
     (* *)
 
