@@ -63,7 +63,8 @@ let index_of_den (coins : (den * den_qty) list) (den : den) =
         | (d,q)::xs -> if d = den then count else (aux (count+1) xs) in
     aux 0 coins
 
-let den_of_index (coins : (den * den_qty) list) (index: int) = fst (L.nth (L.rev coins) index)
+let den_of_index (coins : (den * den_qty) list) (index: int) = 
+    fst (L.nth coins index)
 
 let index_to_last (coins : (den * den_qty) list) (index: int) =
     let rec aux count coins = 
@@ -78,6 +79,27 @@ let rec rest_from_den (coins : (den * den_qty) list) den =
     | [] -> []
     | (d,q)::xs -> if d = den then coins else (rest_from_den xs den)
 
+let print_list l = 
+    Printf.printf "[";
+    let rec aux l =
+        match l with
+        | [] -> ()
+        | e::l -> print_int e ; print_string " " ; aux l in
+    aux l;
+    Printf.printf "]"
+
+let print_lol lol = 
+    Printf.printf "[ ";
+    let _ = L.map print_list lol in
+    Printf.printf " ]"
+
+let print_array arr = 
+  Printf.printf "[| ";
+  for i = 0  to (Array.length arr) - 1 do 
+      print_lol arr.(i);
+  done;
+  Printf.printf "|]\n"
+
 let itrandfltr amt coins den seq f= 
     let iod d = index_of_den coins d in
     let doi i = den_of_index coins i in
@@ -85,10 +107,7 @@ let itrandfltr amt coins den seq f=
     let coins_len = L.length coins in
     let root_to_leaf = it amt (rest_from_den coins den) seq in
     enums := L.append (get_cmp_enum root_to_leaf) !enums;
-    Printf.printf "in itrandfltr\n";
     for j = (iod den) to (coins_len-1) do 
-        Printf.printf "den = %d\n" den;
-        Printf.printf "j = %d\n" j;
         !f.(coins_len -1 - j) <- L.append (filter root_to_leaf (doi j)) !f.(coins_len -1 -j);
     done;
     !enums
@@ -98,12 +117,15 @@ let cc amt coins =
     let clen = L.length coins in
     let f = ref (Array.init clen (fun _ -> [[]])) in
     let enums = ref [] in
+    let seq = ref [] in
+    let flist = ref [] in
     for i = 0 to clen - 1 do 
-        let seq = ref [] in
-        let flist = ref !f.(i) in
+        flist := !f.(i);
         for j = 0 to (L.length !flist) -1 do
             seq := L.hd !flist;
             flist := L.tl !flist;
+            Printf.printf "seq ="; 
+            print_list !seq;
             let new_amt = (amt - (sum !seq)) in
             enums := L.append (itrandfltr new_amt coins (doi i) !seq f) !enums;
         done;
@@ -111,6 +133,9 @@ let cc amt coins =
     done;
     !enums 
 
+
+let _ = 
+    cc 15 [(20,2);(10,2);(5,8);(1,17)]
 (*let cc amt coins =
     let f = ref (Array.init 4 (fun _ -> [])) in
     let clen = 
