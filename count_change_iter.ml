@@ -6,6 +6,7 @@ let sum lst = L.fold_left (+) 0 lst
 type amt = int
 type den = int
 type den_qty = int
+type seq = den list
 
 let rec next_deductible coins amt = 
     (** Returns the largest denomination den in coins such that amt > den *)
