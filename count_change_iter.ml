@@ -6,7 +6,6 @@ let sum lst = L.fold_left (+) 0 lst
 type amt = int
 type den = int
 type den_qty = int
-type seq = den list
 
 let rec next_deductible coins amt = 
     (** Returns the largest denomination den in coins such that amt > den *)
@@ -15,7 +14,7 @@ let rec next_deductible coins amt =
     | (den, qty)::xs -> if amt - den > 0 then den else next_deductible xs amt
 
 
-let rec iter (amt : amt) (coins : (den * den_qty) list) (curr : int list) (acc : (den * amt * den list) list) : (den * amt * seq) list =
+let rec iter (amt : amt) (coins : (den * den_qty) list) (curr : int list) (acc : (den * amt * den list) list) : (den * amt * den list) list =
     (** Recurses down a single-branched tree using coins trying to create a sequence of denominations whose sum is amt and returns a list of nodes encountered
         along the way *)
     match amt, coins with
@@ -108,7 +107,7 @@ let print_array arr =
 
 
 
-let itrandfltr amt coins_list den (seq : seq) f =  
+let itrandfltr amt coins_list den seq f =  
     (* f contains a list of incomplete sequences at index i such that these sequences can be itrandfltr'd upon by denomination (den_of_index coins_list i) *)
     (** Performs
         1. a call to iter with a starting sequence seq trying to reach amount amt with its coins parameter starting at denomination den.
@@ -121,8 +120,10 @@ let itrandfltr amt coins_list den (seq : seq) f =
     let coins_len = L.length coins_list in
     let root_to_leaf = it amt (rest_from_den coins_list den) seq in
     enums := L.append (get_cmp_enum root_to_leaf) !enums;
-    for j = (iod den) to (coins_len-1) do 
-        !f.(coins_len -1 - j) <- L.append (filter root_to_leaf (doi j)) !f.(coins_len -1 -j);
+    for j = ((iod den)+1) to (coins_len-1) do 
+        let curr_den = doi j in
+        let filtered = filter root_to_leaf curr_den in
+        !f.(j) <- L.append filtered !f.(j);
     done;
     !enums
 
@@ -139,11 +140,11 @@ let cc amt coins =
         flist := !f.(i);
         for j = 0 to (L.length !flist) -1 do
             seq := L.hd !flist;
-            flist := L.tl !flist;
-            Printf.printf "seq ="; 
-            print_list !seq;
-            let new_amt = (amt - (sum !seq)) in
-            enums := L.append (itrandfltr new_amt coins (doi i) !seq f) !enums;
+            flist := L.tl !flist;  
+            let new_amt = (amt - (sum !seq)) in (* need to skip a den if new_amt < den*)
+            let cden = (doi i) in
+            if new_amt >= cden then 
+                enums := L.append  !enums (itrandfltr new_amt coins cden !seq f);
         done;
         !f.(i) <- !flist;
     done;
@@ -151,4 +152,4 @@ let cc amt coins =
 
 
 let _ = 
-    cc 15 [(20,2);(10,2);(5,8);(1,17)]
+    cc 17 [(20,2);(10,2);(5,8);(1,17)]
