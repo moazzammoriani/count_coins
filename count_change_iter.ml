@@ -29,7 +29,8 @@ let rec iter (amt : amt) (coins : (den * den_qty) list) (curr : int list) (acc :
             if den > amt then begin
                 iter amt rst curr acc
             end else begin
-                iter new_amt rst new_curr ((curr_den, new_amt, new_curr)::acc) end
+                let curr = next_deductible (L.tl coins) new_amt in
+                iter new_amt rst new_curr ((curr, new_amt, new_curr)::acc) end
         else if den > amt then begin
             iter amt rst curr acc
         end else if (amt - den) < 0 then
