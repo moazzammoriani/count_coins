@@ -19,13 +19,13 @@ let rec count_payment_possibsL (amt : int) (coins: (int * int) list) (acc: int l
             L.append left right
     end
 
-let print_list lst = 
+(*let print_list lst = 
   print_endline "[ ";
   for i = 0  to List.length lst - 1 do 
     print_int @@ List.nth lst i ;
     print_string " "
   done;
-  print_endline "\n]"
+  print_endline "\n]"*)
 
 let coins_input : (int * int) list =
   let cs = [250 ; 100 ; 25 ; 10 ; 5 ; 1] in
@@ -33,6 +33,6 @@ let coins_input : (int * int) list =
   L.combine cs qs
 
 let _ = 
-    count_payment_possibsL 25 [(10,3);(5,8); (1,10)] []
+    count_payment_possibsL n coins_input []
 
 
