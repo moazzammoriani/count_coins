@@ -15,48 +15,12 @@ let rec next_deductible coins amt =
     | [] -> 0
     | (den, _)::xs -> if amt - den > 0 then den else next_deductible xs amt
 
-
-let rec iter (amt : amt) (coins : (den * den_qty) list) (curr : int list) (acc : (den * amt * den list) list) : (den * amt * den list) list =
-    (* Recurses down a single-branched tree using coins trying to create a sequence of denominations whose sum is amt and returns a list of nodes encountered
-        along the way *)
-    match amt, coins with
-    | 0, _ -> acc 
-    | _, [] -> acc
-    | _, (den,qty)::rst-> begin
-        let new_amt = amt - den in
-        let new_coins = (den, (qty-1))::rst in  
-        let new_curr = den::curr in
-        let curr_den = fst @@ L.hd @@ coins in
-        if qty == 1 then 
-            if den > amt then begin
-                iter amt rst curr acc
-            end else begin
-                let curr = next_deductible (L.tl coins) new_amt in
-                iter new_amt rst new_curr ((curr, new_amt, new_curr)::acc) end
-        else if den > amt then begin
-            iter amt rst curr acc
-        end else if (amt - den) < 0 then
-            acc
-        else
-            let curr = if new_amt < curr_den then next_deductible coins new_amt else curr_den in
-            iter new_amt new_coins new_curr ((curr, new_amt, new_curr)::acc)
-    end
-
-let it amt coins curr = 
-    (* wrapper for iter *)
-    iter amt coins curr []
-
 (* Selectors for tuples *)
 let get_1 (x,_,_) = x 
 
 let get_2 (_,y,_) = y
 
 let get_3 (_,_,z) = z
-
-let filter data n = 
-    (* Selector to get a list of sequences generated from iter such that the sequence seq can be itrandfiltr'd upon with n as a its den *)
-    L.map get_3
-    (L.filter (fun t -> let x = get_1 t and y = get_2 t in if x > n && y - n > 0 then true else false) data)
 
 
 let get_cmp_enum (enums : (den * amt * den list) list) : den list list =
@@ -84,6 +48,57 @@ let rec rest_from_den (coins : (den * den_qty) list) den =
     | [] -> []
     | (d,_)::xs -> if d = den then coins else (rest_from_den xs den)
 
+let send_to_f coins f tup = 
+    let den = get_1 tup in 
+    let amt = get_2 tup in
+    let seq = get_3 tup in
+    let flen = A.length !f in
+    for i = (index_of_den coins den) + 1 to flen-1 do 
+        if amt - (den_of_index coins i) > 0 then  
+            !f.(i) <- seq :: !f.(i)
+    done
+
+let rec iterandfilter (amt : amt) start_coins (coins : (den * den_qty) list) (curr : int list) (acc : (den * amt * den list) list) f : den list list =
+    (* Recurses down a single-branched tree using coins trying to create a sequence of denominations whose sum is amt and returns a list of nodes encountered
+        along the way *)
+    match amt, coins with
+    | 0, _ -> (get_3 (L.hd acc))::[]
+    | _, [] -> []
+    | _, (den,qty)::rst-> begin
+        let new_amt = amt - den in
+        let new_coins = (den, (qty-1))::rst in  
+        let new_curr = den::curr in
+        let curr_den = fst @@ L.hd @@ coins in
+        if qty == 1 then 
+            if den > amt then begin
+                iterandfilter amt start_coins rst curr acc f 
+            end else begin
+                let curr = next_deductible (L.tl coins) new_amt in
+                let en = (curr, new_amt, new_curr) in
+                send_to_f start_coins f en;
+                iterandfilter new_amt start_coins rst new_curr (en::acc) f 
+        end else if den > amt then begin
+            iterandfilter amt start_coins rst curr acc f 
+        end else if (amt - den) < 0 then
+            (get_3 (L.hd acc))::[]
+        else
+            let curr = if new_amt < curr_den then next_deductible coins new_amt else curr_den in
+            let en = (curr, new_amt, new_curr) in
+            send_to_f start_coins f en;
+            iterandfilter new_amt start_coins new_coins new_curr (en::acc) f 
+    end
+
+let iandf amt coins curr f= 
+    (* wrapper for iter *)
+    let c = coins in
+    iterandfilter amt c coins curr [] f 
+
+let filter data n = 
+    (* Selector to get a list of sequences generated from iter such that the sequence seq can be itrandfiltr'd upon with n as a its den *)
+    L.map get_3
+    (L.filter (fun t -> let den = get_1 t and amt = get_2 t in if den > n && amt - n > 0 then true else false) data)
+
+
 (*let print_list l = 
     (* Prints a list of ints *)
     Printf.printf "[";
@@ -108,9 +123,7 @@ let rec rest_from_den (coins : (den * den_qty) list) den =
   done;
   Printf.printf "|]\n"*)
 
-
-
-let itrandfltr amt coins_list den seq f =  
+(*let itrandfltr amt coins_list den seq f =  
     (* f contains a list of incomplete sequences at index i such that these sequences can be itrandfltr'd upon by denomination (den_of_index coins_list i) *)
     (* Performs
         1. a call to iter with a starting sequence seq trying to reach amount amt with its coins parameter starting at denomination den.
@@ -128,9 +141,9 @@ let itrandfltr amt coins_list den seq f =
         let filtered = filter root_to_leaf curr_den in
         !f.(j) <- L.append filtered !f.(j);
     done;
-    !enums
+    !enums*)
 
-let cc amt coins = 
+(*let cc amt coins = 
     (* Returns an enumeration of all possible combinations of denominations from coins that can be used to pay amount amt 
         as a list of sequences *)
     let doi i = den_of_index coins i in
@@ -151,12 +164,16 @@ let cc amt coins =
         done;
         !f.(i) <- !flist;
     done;
-    !enums 
+    !enums*) 
 
-let coins_input : (int * int) list =
+let f = ref [|[];[]|] 
+let _ = 
+    iandf 17 [(5,8);(1,17)] [] f
+
+(*let coins_input : (int * int) list =
   let cs = [250 ; 100 ; 25 ; 10 ; 5 ; 1] in
   let qs = [55 ; 88 ; 88 ; 99 ; 122 ; 177] in
   L.combine cs qs
 
 let _ = 
-     cc n coins_input
+     cc n coins_input*)
