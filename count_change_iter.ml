@@ -48,15 +48,6 @@ let rec rest_from_den (coins : (den * den_qty) list) den =
     | [] -> []
     | (d,_)::xs -> if d = den then coins else (rest_from_den xs den)
 
-let send_to_f coins f tup = 
-    let den = get_1 tup in 
-    let amt = get_2 tup in
-    let seq = get_3 tup in
-    let flen = A.length !f in
-    for i = (index_of_den coins den) + 1 to flen-1 do 
-        if amt - (den_of_index coins i) > 0 then  
-            !f.(i) <- seq :: !f.(i)
-    done
 
 let rec iterandfilter (amt : amt) start_coins (coins : (den * den_qty) list) (curr : int list) (acc : (den * amt * den list) list) f : den list list =
     (* Recurses down a single-branched tree using coins trying to create a sequence of denominations whose sum is amt and returns a list of nodes encountered
@@ -65,6 +56,22 @@ let rec iterandfilter (amt : amt) start_coins (coins : (den * den_qty) list) (cu
     | 0, _ -> (get_3 (L.hd acc))::[]
     | _, [] -> []
     | _, (den,qty)::rst-> begin
+        let send_to_f coins cstate tup = 
+            let den = get_1 tup in 
+            let amt = get_2 tup in
+            let seq = get_3 tup in
+            let flen = A.length !f in
+            let cs = ref (rest_from_den cstate den) in
+            for i = (index_of_den coins den) + 1 to flen-1 do 
+                let d = fst (L.hd !cs) in 
+                let q = snd (L.hd !cs) in
+                let a = ((amt - (den_of_index coins i)) > 0) in
+                let b = (amt - (d * q) <= 0) in
+                if a && b then
+                    let nseq = seq :: !f.(i) in 
+                    !f.(i) <- nseq;
+                cs := (L.tl !cs)
+            done; in
         let new_amt = amt - den in
         let new_coins = (den, (qty-1))::rst in  
         let new_curr = den::curr in
@@ -75,7 +82,8 @@ let rec iterandfilter (amt : amt) start_coins (coins : (den * den_qty) list) (cu
             end else begin
                 let curr = next_deductible (L.tl coins) new_amt in
                 let en = (curr, new_amt, new_curr) in
-                send_to_f start_coins f en;
+                if curr > 0 then
+                    send_to_f start_coins coins en;
                 iterandfilter new_amt start_coins rst new_curr (en::acc) f 
         end else if den > amt then begin
             iterandfilter amt start_coins rst curr acc f 
@@ -84,14 +92,11 @@ let rec iterandfilter (amt : amt) start_coins (coins : (den * den_qty) list) (cu
         else
             let curr = if new_amt < curr_den then next_deductible coins new_amt else curr_den in
             let en = (curr, new_amt, new_curr) in
-            send_to_f start_coins f en;
+            if curr > 0 then
+                send_to_f start_coins coins en;
             iterandfilter new_amt start_coins new_coins new_curr (en::acc) f 
     end
 
-let iandf amt coins curr f= 
-    (* wrapper for iter *)
-    let c = coins in
-    iterandfilter amt c coins curr [] f 
 
 let filter data n = 
     (* Selector to get a list of sequences generated from iter such that the sequence seq can be itrandfiltr'd upon with n as a its den *)
@@ -143,15 +148,19 @@ let filter data n =
     done;
     !enums*)
 
-(*let cc amt coins = 
+let cc amt coins = 
     (* Returns an enumeration of all possible combinations of denominations from coins that can be used to pay amount amt 
         as a list of sequences *)
+    let iandf amt c curr f = 
+        (* wrapper for iter *)
+        iterandfilter amt coins c curr [] f in
     let doi i = den_of_index coins i in
     let clen = L.length coins in
     let f = ref (Array.init clen (fun _ -> [[]])) in
     let enums = ref [] in
     let seq = ref [] in
     let flist = ref [] in
+    let c = ref coins in
     for i = 0 to clen - 1 do 
         flist := !f.(i);
         for _ = 0 to (L.length !flist) -1 do
@@ -159,21 +168,20 @@ let filter data n =
             flist := L.tl !flist;  
             let new_amt = (amt - (sum !seq)) in (* need to skip a den if new_amt < den*)
             let cden = (doi i) in
+            let ccoins = rest_from_den coins cden in
             if new_amt >= cden then 
-                enums := L.append  !enums (itrandfltr new_amt coins cden !seq f);
+                enums := L.append  !enums (iandf new_amt ccoins !seq f);
         done;
         !f.(i) <- !flist;
+        c := (L.tl !c);
     done;
-    !enums*) 
+    !enums 
 
-let f = ref [|[];[]|] 
-let _ = 
-    iandf 17 [(5,8);(1,17)] [] f
 
-(*let coins_input : (int * int) list =
+let coins_input : (int * int) list =
   let cs = [250 ; 100 ; 25 ; 10 ; 5 ; 1] in
   let qs = [55 ; 88 ; 88 ; 99 ; 122 ; 177] in
   L.combine cs qs
 
 let _ = 
-     cc n coins_input*)
+     cc 600 coins_input
