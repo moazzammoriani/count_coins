@@ -9,7 +9,6 @@ let get_2 (_,y,_) = y
 
 let get_3 (_,_,z) = z
 
-
 let rec des amt coins curr acc stack =
     let stack_top = L.hd stack in
     let stack_rest = L.tl stack in
