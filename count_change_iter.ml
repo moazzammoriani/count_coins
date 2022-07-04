@@ -1,6 +1,7 @@
 let n = try int_of_string @@ Sys.argv.(1) with _ -> 960
 
 module L = List
+module T = Domainslib.Task
 
 (* Selectors for tuples *)
 let get_1 (x,_,_) = x 
@@ -9,16 +10,26 @@ let get_2 (_,y,_) = y
 
 let get_3 (_,_,z) = z
 
+
 let rec des amt coins curr acc stack =
-    let stack_top = L.hd stack in
-    let stack_rest = L.tl stack in
-    let get_amt = get_1 in 
-    let get_coins = get_2 in
-    let get_curr = get_3 in
     match amt, coins, stack with
     | _, _, [] -> acc 
-    | 0, _, _ -> des (get_amt stack_top) (get_coins stack_top) (get_curr stack_top) (curr::acc) stack_rest 
-    | _, [], _ -> des (get_amt stack_top) (get_coins stack_top) (get_curr stack_top) acc stack_rest 
+    | 0, _, _ -> begin 
+        let stack_top = L.hd stack in
+        let stack_rest = L.tl stack in
+        let get_amt = get_1 in 
+        let get_coins = get_2 in
+        let get_curr = get_3 in
+        des (get_amt stack_top) (get_coins stack_top) (get_curr stack_top) (curr::acc) stack_rest 
+    end
+    | _, [], _ -> begin
+        let stack_top = L.hd stack in
+        let stack_rest = L.tl stack in
+        let get_amt = get_1 in 
+        let get_coins = get_2 in
+        let get_curr = get_3 in
+        des (get_amt stack_top) (get_coins stack_top) (get_curr stack_top) acc stack_rest 
+    end
     | _, (den, qty)::rst, _ -> begin 
         let new_amt = amt - den in 
         let new_coins = (den, qty -1)::rst in 
