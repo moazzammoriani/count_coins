@@ -1,4 +1,4 @@
-let num_domains = try int_of_string @@ Sys.argv.(1) with _ -> 1
+let num_domains = try int_of_string @@ Sys.argv.(1) with _ ->  1 
 let n = try int_of_string @@ Sys.argv.(2) with _ -> 960
 
 module A = Array
@@ -68,12 +68,13 @@ let setup_stacks amt coins =
 
 let cc_par pool amt (coins : ((int * int) list)) arr = 
     let setup = setup_stacks amt coins in 
-    let len  = A.length arr in
+    let len   = A.length arr in
     let amt   = fun (x, _, _, _) -> x in 
     let c     = fun (_, x, _, _) -> x in
     let curr  = fun (_, _, x, _) -> x in
     let stack = fun (_, _, _, x) -> x in
-    T.parallel_for pool ~start:0 ~finish:len ~body:(fun i ->
+    T.parallel_for pool ~start:0 ~finish:(len-1) ~body:(fun i ->
+        Printf.printf "%d\n" i;
         arr.(i) <- des (amt setup.(i)) (c setup.(i)) (curr setup.(i)) [] (stack setup.(i));
     ) 
 
@@ -82,8 +83,10 @@ let coins_input : (int * int) list =
   let qs = [55 ; 88 ; 88 ; 99 ; 122 ; 177] in
   L.combine cs qs
 
-let () = 
-    let pool = T.setup_pool ~num_additional_domains:(num_domains - 1) () in 
-    let arr = A.init (L.length coins_input) (fun _ -> []) in
-    cc_par pool n coins_input arr;
+let arr = A.init (L.length coins_input) (fun _ -> [])
+
+let _ = 
+    let pool = T.setup_pool ~num_additional_domains:(num_domains - 1) () in
+    T.run pool (fun () -> cc_par pool n coins_input arr);
+    Printf.printf "possibilites = %d\n" (A.fold_left (+) 0 (A.map L.length arr));
     T.teardown_pool pool

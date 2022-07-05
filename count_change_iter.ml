@@ -1,7 +1,7 @@
 let n = try int_of_string @@ Sys.argv.(1) with _ -> 960
 
 module L = List
-module T = Domainslib.Task
+(*module T = Domainslib.Task*)
 
 (* Selectors for tuples *)
 let get_1 (x,_,_) = x 
@@ -55,5 +55,6 @@ let coins_input : (int * int) list =
   let qs = [55 ; 88 ; 88 ; 99 ; 122 ; 177] in
   L.combine cs qs
 
-let _ = 
-    cc n coins_input
+let () = 
+    let x = cc n coins_input in
+    Printf.printf "possibilities = %d\n" (L.length x)
